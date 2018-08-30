@@ -1,1 +1,1 @@
-# Firestore-AdminJS
+Admin for dps-tokyo Firestore App 
