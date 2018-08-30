@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-messaging.js"></script>
+    <script src="https://storage.cloud.google.com/firebase-preview-drop/web/firestore/0.4.8/firestore.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.3/angular.js"></script>
+
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyArvSCYLN9XgOVm_7fHwwWXehkaFpwo-cM",
+            authDomain: "firestoredemo1.firebaseapp.com",
+            databaseURL: "https://firestoredemo1.firebaseio.com",
+            projectId: "firestoredemo1",
+            storageBucket: "firestoredemo1.appspot.com",
+            messagingSenderId: "97766922346"
+        };
+        firebase.initializeApp(config);
+
+        firebase.firestore().settings({
+            // Enable offline support
+            persistence: true
+        });
+
+        //Initialize Cloud Firestore through firebase
+        var fstoreDb = firebase.firestore();
+
+
+        $(document).ready(function() {
+
+            $('#saveBtn').click(function() {
+
+                var sizeArr = [];
+                $("input:checkbox[name=size]:checked").each(function() {
+                    sizeArr.push($(this).val());
+                });
+
+                var clotheData = {
+                    name: $('#title').val(),
+                    brand: $('#brand').val(),
+                    seller: $('#seller').val(),
+                    is_display: true,
+                    price: parseInt($('#price').val()),
+                    ratings: $('#ratings').val(),
+                    stock: parseInt($('#stock').val()),
+                    added_on: new Date(),
+                    available_size: sizeArr,
+                    description: $('#description').val(),
+                    thumbnail: $('#thumbnail').val(),
+                };
+
+                // Add a new document in collection "cities" with ID "DC"
+
+
+                fstoreDb.collection("apparel").add(clotheData)
+                    .then(function(docRef) {
+                        console.log("Document successfully written with id: " + docRef.id);
+                        $('#saveSucc').show();
+                        alert("Add data successful!");
+                        window.location.href = "newinput.html";
+                    })
+                    .catch(function(error) {
+                        console.error("Error writing document: ", error);
+                        $('#saveErr').show();
+                        alert("Add data failed!");
+                    });
+            });
+        });
+
+        function cancelBtn() {
+            window.location.href = "newlist.html"
+        }
+
+        function toggleSignOut() {
+            if (firebase.auth().currentUser) {
+                // [START signout]
+                firebase.auth().signOut();
+                console.log(" log out.")
+                    // [END signout]
+                window.location.href = "newlogin.html";
+            } else {
+                console.log("already log out.")
+            }
+        }
+    </script>
+    <title>Form fields with material design, in pure CSS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+    <link rel="stylesheet" href="css/styleInput.css">
+
+
+</head>
+
+<body>
+
+    <div class="container">
+        <form>
+            <h1>Add new record</h1>
+            <div style="text-align:right"><a href="newlist.html">&#11013; Back to List</a></div>
+            <div class="form-group">
+                <select name="brand" id="brand">
+                    <option value="uniqlo">Uniqlo</option>
+                    <option value="gu">GU</option>
+                    <option value="hm">H&M</option>
+                </select>
+                <label class="control-label" for="select">Select Brand</label><i class="bar"></i>
+            </div>
+
+            <div class="form-group">
+                <select name="seller" id="seller">
+                    <option value="Tshirt.ts">Tshirt.ts</option>
+                    <option value="Glestore">Glestore</option>
+                    <option value="Pizoff(ピゾフ)">Pizoff(ピゾフ)</option>                
+                  </select>
+                <label class="control-label" for="select">Select Brand</label><i class="bar"></i>
+            </div>
+
+            <div class="form-group">
+                <input type="text" required="required" name="title" id="title" />
+                <label class="control-label" for="input">Title</label><i class="bar"></i>
+            </div>
+
+            <div class="form-radio">
+                <div class="radio"> <label><input type="radio" name="size" value="S" checked="checked"/><i class="helper"></i>S</label> </div>
+                <div class="radio"> <label><input type="radio" name="size" value="M" checked="checked"/><i class="helper"></i>M</label> </div>
+                <div class="radio"> <label><input type="radio" name="size" value="L" checked="checked"/><i class="helper"></i>L</label> </div>
+                <div class="radio"> <label><input type="radio" name="size" value="XL" checked="checked"/><i class="helper"></i>XL</label></div>
+                <div class="radio"> <label><input type="radio" name="size" value="XXL" checked="checked"/><i class="helper"></i>XXL</label></div>
+            </div>
+
+            <div class="form-group">
+                <input type="text" name="stock" id="stock" />
+                <label class="control-label" for="input">Current stock</label><i class="bar"></i>
+            </div>
+            <div class="form-group">
+                <input type="text" name="price" id="price" />
+                <label class="control-label" for="input">Price (￥)</label><i class="bar"></i>
+            </div>
+            <div class="form-group">
+                <input type="text" name="ratings" id="ratings" max="5" min="1" />
+                <label class="control-label" for="input">Initial ratings</label><i class="bar"></i>
+            </div>
+            <div class="form-group">
+                <textarea name="description" id="description" cols="50" rows="3"></textarea>
+                <label class="control-label" for="input">Description</label><i class="bar"></i>
+            </div>
+            <div class="form-group">
+                <input name="thumbnail" id="thumbnail" placeholder="4.jpg" />
+                <label class="control-label" for="input">Thumbnail name</label><i class="bar"></i>
+            </div>
+        </form>
+
+        <div class="button-container">
+            <button class="button" type="submit" value="Save" name="save" id="saveBtn" style="margin-right:40px"><span>Submit</span></button>
+            <button class="button" type="submit" onclick="cancelBtn()"><span>Cancel</span></button>
+        </div>
+    </div>
+</body>
+
+</html>

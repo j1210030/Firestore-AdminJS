@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Material Design Table</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel='stylesheet prefetch' href='https://storage.googleapis.com/code.getmdl.io/1.0.4/material.indigo-pink.min.css'>
+    <link rel='stylesheet prefetch' href='https://fonts.googleapis.com/icon?family=Material+Icons'>
+    <link rel="stylesheet" href="css/style.css">
+
+    <meta charset="UTF-8">
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-messaging.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-storage.js"></script>
+    <!-- <script src="https://storage.cloud.google.com/firebase-preview-drop/web/firestore/0.4.8/firestore.js"></script> -->
+    <script type="text/javascript" src="js/firestore.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery.formatCurrency-1.4.0.js"></script>
+    <script type="text/javascript" src="js/i18n/jquery.formatCurrency.all.js"></script>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo</title>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://rawgit.com/daniel-nagy/md-data-table/master/dist/md-data-table.css">
+
+    <script>
+        // Initialize Firebase
+        // TODO: Replace with your project's customized code snippet
+        var config = {
+            apiKey: "AIzaSyArvSCYLN9XgOVm_7fHwwWXehkaFpwo-cM",
+            authDomain: "firestoredemo1.firebaseapp.com",
+            storageBucket: "gs://firestoredemo1.appspot.com",
+            messagingSenderId: "816294692916",
+            projectId: "firestoredemo1"
+        };
+        firebase.initializeApp(config);
+        // Initialize firestore
+        firebase.firestore().settings({
+            // Enable offline support
+            persistence: false
+        });
+
+
+
+        //Initialize Cloud Firestore through firebase
+        var fstoreDb = firebase.firestore();
+
+        var fbStorage = firebase.storage().ref();
+
+        var apparelRef = fstoreDb.collection("apparel");
+        var thumbImages = [];
+
+
+        // Deleting item
+        function deleteItem(docId) {
+            var r = confirm("Are you sute to delete this item?");
+            if (r == false) {
+                return false;
+            }
+            var rowId = $('#' + docId).attr('rel');
+            console.log('Document Id to be deleted : ' + docId + ' row id : ' + rowId);
+            fstoreDb.collection("apparel").doc(docId).delete().then(function() {
+                console.log("Document successfully deleted!");
+                $('#' + rowId).remove();
+                $('#deleteSuccess').show();
+            }).catch(function(error) {
+                console.error("Error removing document: ", error);
+            });
+
+        }
+
+
+        $(document).ready(function() {
+
+            //Opening add new form
+            $('#addNewBtn').click(function() {
+                console.log('---New item--');
+                window.location.href = "newinput.html";
+            });
+
+            // Filter data
+            $("#searchBtn").click(function() {
+
+                apparelRef = fstoreDb.collection("apparel");
+
+                var brand = $('#brand').val();
+                var seller = $('#seller').val();
+                //var price = $('#price').val();
+
+                if (brand.length == 0 && seller.length == 0) {
+                    console.log(' Nothing is Selected ');
+                    $('#dataBody').empty();
+                    fetchData(apparelRef);
+
+                    return false;
+                }
+
+                console.log(' Selected brand: ' + brand + ' Selected seller: ' + seller);
+
+                if (brand.length > 0) {
+                    apparelRef = apparelRef.where("brand", "==", brand)
+                }
+                if (seller.length > 0) {
+                    apparelRef = apparelRef.where("seller", "==", seller);
+                }
+                //if (price != '') {
+                //apparelRef = apparelRef.where("price", "<=", 2500);
+                //}
+
+                $('#dataBody').empty();
+
+                fetchData(apparelRef);
+            });
+
+            fetchData(apparelRef);
+
+        });
+
+        function fetchData(fbRef) {
+            //fbRef = fbRef.orderBy("added_on","desc");
+            //fbRef = fbRef.orderBy("price","asc");
+
+            fbRef.get()
+                .then(function(querySnapshot) {
+                    var index = 0;
+                    querySnapshot.forEach(function(doc) {
+                        var item = doc.data();
+                        //console.log('id: ' + doc.id + ' name: ' + item.name);
+                        appendRows(item, index, doc.id);
+                        //thumbImages.push(item.thumbnail);
+                        index = parseInt(index) + 1;
+                    });
+
+                    $('#loading').hide();
+                    $('#data').show();
+                    $('#itemCnt').html(index);
+
+                })
+                .catch(function(error) {
+                    console.log("Error getting documents: ", error);
+                });
+
+        }
+
+        function appendRows(item, index, docId) {
+            //console.log(' index is : ' + index);
+
+            var imgUrl = "'https://firebasestorage.googleapis.com/v0/b/firestoredemo1.appspot.com/o/images%2Fapparel%2Fthumbnails%2F" + item.thumbnail + "?alt=media'";
+            var brandLogo = "<img src='imgs/brand/" + item.brand + ".jpg' width='20px' height='20px' />";
+            var colText = "<td>" + (index + 1) + "</td>" + "<td><img src=" + imgUrl + " width='50' height='auto' id='thumb-1' /></td>" +
+                "<td title='" + item.description + "'>" + item.name + "</td>" + "<td>" + brandLogo + "</td>" + "<td>" + item.seller + "</td>" +
+                "<td class='currency'>" + item.price + "</td>" + "<td>" + item.stock + "</td>" +
+                " <td><a href='newinput.html?id=" + docId + "'>Edit</a>" +
+                "  <a href='#'  id='" + docId + "' rel='" + index + "' onClick='deleteItem(this.id);'>Delete</a></td>";
+
+            $('#dataBody').append("<tr id='" + index + "'>" + colText + "</tr>");
+            $('.currency').formatCurrency({
+                colorize: false,
+                roundToDecimalPlace: 0,
+                region: 'ja-JP'
+            });
+
+        }
+
+        function setThumbnails() {
+            var itemLength = parseInt(thumbImages.length);
+            console.log('Length(set Thumbnails): ' + itemLength);
+            var i = 0;
+            while (i < itemLength) {
+
+                console.log(' Url is ' + url);
+                var elmId = "thumb-" + parseInt(i) + 1;
+                console.log(' Element id is ' + elmId);
+                $('#' + elmId).attr("src", "https://firebasestorage.googleapis.com/v0/b/firestoredemo1.appspot.com/o/images%2Fapparel%2Fthumbnails%2F2.jpg?alt=media&token=0ea193fe-a7f8-495e-b27e-facc67775e1e");
+                i = i + 1;
+
+                i = i + 1;
+            }
+        }
+
+        function signOut() {
+
+            firebase.auth().signOut().then(function() {
+
+                console.log('Signed Out');
+                window.location.href = "newlogin.html";
+
+            }, function(error) {
+                console.error('Sign Out Error', error);
+            });
+        }
+    </script>
+    <title>Create a New Pen</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="pen-title;padding-left:20px;">
+        <h4>DPS-Tokyo Fashion Store</h4>
+    </div>
+    <div id="loading">
+        <div style="color:#0000CC; font-size:20px"><i> Loading  data, please wait.</i></div>
+        <br/>
+        <img src="imgs/loading.gif" />
+    </div>
+
+    <div id="deleteSuccess" style="color:green;display:none">
+        Item successfully deleted from the store.
+    </div>
+
+    <div class="app-page" id="data" style="display:none">
+        <div style="color:#4c4cff;font-size:20px"> Apparel List &nbsp; [ <span id="itemCnt" style="color:#cc0000;"></span> Items ]
+        </div>
+
+
+
+        <div class="mdl-grid">
+            <div class="mdl-cell mdl-cell--8-col">
+                <table class="mdl-data-table mdl-data-table_full mdl-js-data-table mdl-shadow--4dp">
+                    <colgroup>
+                        <col style="width: 1px" />
+                        <col style="width: 1px" />
+                        <col />
+                        <col style="width: 128px" />
+                        <col style="width: 128px" />
+                        <col style="width: 128px" />
+                    </colgroup>
+
+                    <thead>
+                        <tr>
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th><span>Thumbnail</span></th>
+                                    <th><span>Name</span></th>
+                                    <th><span>Brand</span></th>
+                                    <th><span>Seller</span></th>
+                                    <th><span>Price(JPY)</span></th>
+                                    <th><span>Stock</span></th>
+                                    <th class="controls mdl-data-table__cell--non-numeric">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataBody"> </tbody>
+                </table>
+            </div>
+            <div class="mdl-cell mdl-cell--2-col">
+                <div class="mdl-cell mdl-cell--2-col">
+                    <form class="mdl-card mdl-shadow--2dp" novalidate role="form" name="clientForm">
+                        <div class="mdl-card__title mdl-card--expand">
+                            <h2 class="mdl-card__title-text">Search Filter</h2>
+                        </div>
+                        Brand:
+                        <select name="brand" id="brand">
+                            <option value="">Select</option>
+                            <option value="uniqlo">Uniqlo</option>
+                            <option value="gu">GU</option>
+                            <option value="hm">H&M</option></select> Seller:
+                        <select name="seller" id="seller">
+                            <option value="">Select</option>
+                            <option value="Tshirt.ts">Tshirt.ts</option>
+                            <option value="Glestore">Glestore</option>
+                            <option value="Pizoff(ピゾフ)">Pizoff(ピゾフ)</option></select>
+                        <!-- 
+                            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                                <input class="mdl-textfield__input" type="text" name="price" id="price" size="10">
+                                <label class="mdl-textfield__label" for=""> Min price:</label>
+                                <span class="mdl-textfield__error" ng-show="clientForm.percentage.$error.min">Price should be greater than 0</span>
+                            </div>
+                                -->
+                        <div class="mdl-card__actions mdl-card--border">
+                            <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect" type="button" id="searchBtn">Search</button>
+                        </div>
+                    </form>
+                </div>
+
+
+                <div class="mdl-cell mdl-cell--1-col">
+                    <form class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title mdl-card--expand">
+                            <h2 class="mdl-card__title-text">Functions</h2>
+                        </div>
+                        <div class="mdl-card__actions mdl-card--border">
+                            <button type="button" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" id="addNewBtn">Add new apparel</button>
+                        </div>
+                        <div class="mdl-card__actions mdl-card--border">
+                            <button type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect" onclick="signOut()" id="logoutBtn">Log out</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
